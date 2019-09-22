@@ -13,11 +13,19 @@ async def fetch_charData(namelist):
     # perform the requests for IDs and character data
     async def fetch(session, url, name):
         data = await fetch_id(session, url, name)
-        char = await fetch_char(session, data['character'][0])
-        return char
+        if 'character' in data:
+            char = await fetch_char(session, data['character'][0])
+            return char
+
+        else:
+            char = {
+                "invalid" : True,
+                "name" : name
+                }
+            return char
     
     # make request to /search/ endpoint using character name to get character ID, cached by character name
-    @cached(ttl=1000, cache=Cache.MEMORY, key_builder=keybuild_search)
+    @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_search)
     async def fetch_id(session, url, name):
         params = [
             ('categories', 'character'), 
@@ -31,7 +39,7 @@ async def fetch_charData(namelist):
             return data
 
     # make request to /characters/ endpoint using character ID, cached by character ID
-    @cached(ttl=1000, cache=Cache.MEMORY, key_builder=keybuild_id)
+    @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_id)
     async def fetch_char(session, charID):
         params = [
             ('datasource', 'tranquility'), 
@@ -43,7 +51,7 @@ async def fetch_charData(namelist):
     async def fetch_all(name_list):
         url = 'https://esi.evetech.net/latest/search/'
         async with aiohttp.ClientSession() as session:
-            results = await asyncio.gather(*[fetch(session, url, name) for name in name_list], return_exceptions=True)
+            results = await asyncio.gather(*[fetch(session, url, name) for name in name_list])
             return results
 
     return await fetch_all(namelist)
@@ -51,6 +59,7 @@ async def fetch_charData(namelist):
 async def full_fetch(namelist):
     data = await fetch_charData(namelist)
     return data
+
 
 def keybuild_id(f, session, charID):
     return charID
