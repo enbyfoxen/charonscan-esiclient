@@ -32,7 +32,7 @@ async def post(request):
     return web.json_response(data)  
 
 
-# This parses the loca string into a list of string.
+# This parses the local  string into a list of string.
 # It returns none if there are invalid entries in the list, as that means malformed user input.
 async def parse_local(local_string):
     local_list = local_string.splitlines()
@@ -49,4 +49,4 @@ async def parse_local(local_string):
 
 app = web.Application()
 app.add_routes(routes)
-web.run_app(app)
+web.run_app(app, path='/tmp/server.sock')

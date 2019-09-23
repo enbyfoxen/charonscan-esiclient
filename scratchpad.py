@@ -35,4 +35,4 @@ async def parse_local(local_string):
 
 app = web.Application()
 app.add_routes(routes)
-web.run_app(app)
+web.run_app(app, path='/tmp/server.sock')
