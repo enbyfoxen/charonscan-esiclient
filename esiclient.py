@@ -10,7 +10,7 @@ with open('chars.json') as f:
     f.close()
 
 async def fetch_charData(namelist):
-    # perform the requests for IDs and character data
+    # Perform the requests for IDs and character data
     async def fetch(session, url, name):
         data = await fetch_id(session, url, name)
         if 'character' in data:
@@ -24,7 +24,7 @@ async def fetch_charData(namelist):
                 }
             return char
     
-    # make request to /search/ endpoint using character name to get character ID, cached by character name
+    # Make request to /search/ endpoint using character name to get character ID, cached by character name
     @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_search)
     async def fetch_id(session, url, name):
         params = [
@@ -38,7 +38,7 @@ async def fetch_charData(namelist):
             data = await response.json()
             return data
 
-    # make request to /characters/ endpoint using character ID, cached by character ID
+    # Make request to /characters/ endpoint using character ID, cached by character ID
     @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_id)
     async def fetch_char(session, charID):
         params = [

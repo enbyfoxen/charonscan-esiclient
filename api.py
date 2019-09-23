@@ -15,12 +15,12 @@ async def post(request):
     if request.headers['Content-Type'] != 'application/json':
         return web.Response(text="Wrong Content-Type, JSON required\n", status=415)
     
-    # return 422 unprocessable entity if the json payload is missing the key 'string'
+    # Return 422 unprocessable entity if the json payload is missing the key 'string'
     jsondat = await request.json()
     if 'string' not in jsondat:
         return web.Response(text="JSON data error, 'string' key missing from object\n", status=422)
 
-    # return 422 unprocessable entity if the json payload contains invalid characters or lines of invalid length.
+    # Return 422 unprocessable entity if the json payload contains invalid characters or lines of invalid length.
     # Add 'string-invalid' header as true for easier client side reading
     parsed = await parse_local(jsondat['string'])
     if parsed == None:
