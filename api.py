@@ -29,7 +29,9 @@ async def post(request):
         return resp
 
     data = await esiclient.full_fetch(parsed)
-    return web.json_response(data)  
+    resp = web.json_response(data)
+    resp.headers['string-invalid'] = 'false'
+    return resp
 
 
 # This parses the local  string into a list of string.
