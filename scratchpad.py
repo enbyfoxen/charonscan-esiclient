@@ -1,38 +1,104 @@
-from aiohttp import web
-import regex
+import aiohttp
+import asyncio
+import time
 import json
-import esiclient
+from aiocache import Cache
+from aiocache import cached
 
-### regex patterns ###
-# Pattern to check if possible EVE username
-regex_localscan = regex.compile(r"^([A-Za-z0-9\-' ]{3,37})$")
-### regex pattersn end ###
+with open('charssmall.json') as f:
+    chartext = json.load(f)
+    f.close()
 
-routes = web.RouteTableDef()
+async def fetch_charData(namelist):
+    # Perform the requests for IDs and character data
+    async def fetch(session, url, name):
+        data = await fetch_id(session, url, name)
+        if 'character' in data:
+            char = await fetch_char(session, data['character'][0])
+            return char
 
-@routes.post('/local')
-async def post(request):
-    if request.headers['Content-Type'] != 'application/json':
-        return web.Response(text="Wrong Content-Type, JSON required\n", status=415)
+        else:
+            char = {
+                "invalid" : True,
+                "name" : name
+                }
+            return char
     
-    json = await request.json()
-    await esi
+    # Make request to /search/ endpoint using character name to get character ID, cached by character name
+    @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_search)
+    async def fetch_id(session, url, name):
+        params = [
+            ('categories', 'character'), 
+            ('datasource', 'tranquility'), 
+            ('language', 'en-us'), 
+            ('search', name),
+            ('strict', 'true')]
+
+        async with session.get(url, params=params) as response:
+            data = await response.json()
+            return data
+
+    # Make request to /characters/ endpoint using character ID, cached by character ID
+    @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_id)
+    async def fetch_char(session, charID):
+        params = [
+            ('datasource', 'tranquility'), 
+        ]
+        url = 'https://esi.evetech.net/latest/characters/'
+        async with session.get(url + str(charID), params=params) as response:
+            return await response.json()
+
+    @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_alliance)
+    async def fetch_alliance(session, allianceID):
+        params = [
+            ('datasource', 'tranquility')
+        ]
+        url = 'https://esi.evetech.net/latest/alliances/'
+        async with session.get(url + str(allianceID), params=params) as response:
+            return await response.json()
     
-# This parses the loca string into a list of string.
-# It returns none if there are invalid entries in the list, as that means malformed user input.
-async def parse_local(local_string):
-    local_list = local_string.splitlines()
-    match_list = []
-    for entry in local_list:
-        match = regex.match(regex_localscan, entry)
-        if match.__len__() != 0:
-            match_list.append(match)
+    @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_corporation)
+    async def fetch_corporation(session, corporationID):
+        params = [
+            ('datasource', 'tranquility')
+        ]
+        url = 'https://esi.evetech.net/latest/corporations/'
+        async with session.get(url + str(corporationID), params=params) as response:
+            return await response.json()
 
-    if match_list.__len__() < local_list.__len__():
-        return None
-    else:
-        return match_list
+    async def fetch_all(name_list):
+        url = 'https://esi.evetech.net/latest/search/'
+        async with aiohttp.ClientSession() as session:
+            results = await asyncio.gather(*[fetch(session, url, name) for name in name_list])
+            return results
+            
+    return await fetch_all(namelist)
 
-app = web.Application()
-app.add_routes(routes)
-web.run_app(app, path='/tmp/server.sock')
+async def full_fetch(namelist):
+    data = await fetch_charData(namelist)
+    return data
+
+def keybuild_id(f, session, charID):
+    return charID
+
+def keybuild_search(f, session, url, name):
+    return name
+
+def keybuild_alliance(f, session, allianceID):
+    return allianceID
+
+def keybuild_corporation(f, session, corporationID):
+    return corporationID
+
+if __name__ == "__main__":
+    data = asyncio.run(full_fetch(chartext))
+    print(data)
+    #start = time.time()
+    #data = asyncio.run(full_fetch(chartext))
+    #end = time.time()
+    #print(end - start)
+    #start = time.time()
+    #data = asyncio.run(full_fetch(chartext))
+    #end = time.time()
+    #print(end - start)
+    #input()
