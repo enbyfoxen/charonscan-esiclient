@@ -71,9 +71,36 @@ async def fetch_charData(namelist):
         async with aiohttp.ClientSession() as session:
             results = await asyncio.gather(*[fetch(session, url, name) for name in name_list])
             return results
-            
-    return await fetch_all(namelist)
 
+    async def extract_corp_ids(char_data_list):
+        corp_ids = []
+        for entry in char_data_list:
+            if entry.get('corporation_id') is not None:
+                if entry['corporation_id'] not in corp_ids:
+                    corp_ids.append(entry['corporation_id'])
+
+        return corp_ids
+    
+    async def extract_alliance_ids(char_data_list):
+        alliance_ids = []
+        for entry in char_data_list:
+            if entry.get('alliance_id') is not None:
+                if entry['alliance_id'] not in alliance_ids:
+                    alliance_ids.append(entry['alliance_id'])
+            
+        return alliance_ids
+    
+    async def gather_alliance_data(alliance_ids):
+        for entry in alliance_ids:
+
+                
+    char_data_list = await fetch_all(namelist)
+    corp_ids = await extract_corp_ids(char_data_list)
+    alliance_ids = await extract_alliance_ids(char_data_list)
+    print(alliance_ids)
+    print(corp_ids)
+    return await fetch_all(namelist)
+    
 async def full_fetch(namelist):
     data = await fetch_charData(namelist)
     return data
@@ -92,7 +119,7 @@ def keybuild_corporation(f, session, corporationID):
 
 if __name__ == "__main__":
     data = asyncio.run(full_fetch(chartext))
-    print(data)
+    #print(data)
     #start = time.time()
     #data = asyncio.run(full_fetch(chartext))
     #end = time.time()
