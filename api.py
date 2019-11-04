@@ -49,6 +49,10 @@ async def parse_local(local_string):
     else:
         return match_list
 
+async def on_shutdown(app):
+    print("shutting down")
+
 app = web.Application()
 app.add_routes(routes)
+app.on_shutdown.append(on_shutdown)
 web.run_app(app, path='/tmp/esiclient.sock')
