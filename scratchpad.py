@@ -90,9 +90,9 @@ async def fetch_charData(namelist):
             
         return alliance_ids
     
-    async def gather_alliance_data(alliance_ids):
+    async def gather_alliance_data(session, alliance_ids):
         for entry in alliance_ids:
-
+            
                 
     char_data_list = await fetch_all(namelist)
     corp_ids = await extract_corp_ids(char_data_list)
