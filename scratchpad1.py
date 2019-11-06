@@ -135,9 +135,7 @@ async def test():
     with open('charssmall.json') as f:
         chartext = json.load(f)
         f.close()
-    #async with ESIClient() as esiclient:
-    #    data = await esiclient.fetch_all_names(chartext)
-    #    return data
+
     esiclient = ESIClient()
     print("client created")
     data = await esiclient.fetch_all_names(chartext)
