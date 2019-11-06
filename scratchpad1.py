@@ -29,8 +29,17 @@ class ESIClient:
 
    
     async def fetch_all_names(self, name_list):
-        char_data_list = await asyncio.gather(*[self.fetch_char_complete(name) for name in name_list])  
-        return char_data_list
+        char_data_list = await asyncio.gather(*[self.fetch_char_complete(name) for name in name_list])
+        corp_id_list = await self.extract_corp_ids(char_data_list)
+        alliance_id_list = await self.extract_alliance_ids(char_data_list)
+        corp_data_list = await self.gather_corporation_data(corp_id_list)
+        alliance_data_list = await self.gather_alliance_data(alliance_id_list)
+        data_combined = {
+            'char_data_list' : char_data_list,
+            'alliance_data_list' : alliance_data_list,
+            'corp_data_list' : corp_data_list
+        }
+        return data_combined
 
     async def fetch_char_complete(self, name):
         data = await self.fetch_id(name)
@@ -109,7 +118,7 @@ class ESIClient:
     async def gather_alliance_data(self, alliance_ids):
         alliance_data_dict = {}
         for entry in alliance_ids:
-            data = await fetch_alliance(entry)
+            data = await self.fetch_alliance(entry)
             alliance_data_dict[entry] = data
 
         return alliance_data_dict
@@ -117,7 +126,7 @@ class ESIClient:
     async def gather_corporation_data(self, corp_ids):
         corp_data_dict = {}
         for entry in corp_ids:
-            data = await fetch_corporation(entry)
+            data = await self.fetch_corporation(entry)
             corp_data_dict[entry] = data
         
         return corp_data_dict
@@ -141,7 +150,7 @@ async def test():
 
 if __name__ == "__main__":
     data = asyncio.run(test())
-    print(data)
+    print(data['alliance_data_list'])
     #start = time.time()
     #data = asyncio.run(full_fetch(chartext))
     #end = time.time()
