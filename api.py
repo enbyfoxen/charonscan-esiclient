@@ -7,6 +7,7 @@ import esiclient
 # Pattern to check if possible EVE username
 regex_localscan = regex.compile(r"^([A-Za-z0-9\-' ]{3,37})$")
 ### regex pattersn end ###
+esiclient_session = esiclient.ESIClient()
 
 routes = web.RouteTableDef()
 
@@ -28,7 +29,7 @@ async def post(request):
         resp.headers['string-invalid'] = 'true'
         return resp
 
-    data = await esiclient.full_fetch(parsed)
+    data = await esiclient_session.fetch_all_names(parsed)
     resp = web.json_response(data)
     resp.headers['string-invalid'] = 'false'
     return resp
@@ -51,6 +52,7 @@ async def parse_local(local_string):
 
 async def on_shutdown(app):
     print("shutting down")
+    await esiclient_session.session.close() # Close and clean up aiohttp session
 
 app = web.Application()
 app.add_routes(routes)
