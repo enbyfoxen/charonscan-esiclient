@@ -30,10 +30,10 @@ class ESIClient:
    
     async def fetch_all_names(self, name_list):
         char_data_list = await asyncio.gather(*[self.fetch_char_complete(name) for name in name_list])
-        corp_id_list = await self.extract_corp_ids(char_data_list)
-        alliance_id_list = await self.extract_alliance_ids(char_data_list)
-        corp_data_list = await self.gather_corporation_data(corp_id_list)
-        alliance_data_list = await self.gather_alliance_data(alliance_id_list)
+        corp_id_struc = await self.extract_corp_ids(char_data_list)
+        alliance_id_struc = await self.extract_alliance_ids(char_data_list)
+        corp_data_list = await self.gather_corporation_data(corp_id_struc)
+        alliance_data_list = await self.gather_alliance_data(alliance_id_struc)
         data_combined = {
             'char_data_list' : char_data_list,
             'alliance_data_list' : alliance_data_list,
@@ -105,33 +105,43 @@ class ESIClient:
             if entry.get('corporation_id') is not None:
                 if entry['corporation_id'] not in corp_ids:
                     corp_ids.append(entry['corporation_id'])
-                    corp_id_occurences[entry['corporation_id']] = 0
+                    corp_id_occurences[entry['corporation_id']] = 1
                 else:
                     corp_id_occurences[entry['corporation_id']] += 1
 
-        return corp_ids
+        corp_id_struc = {"corp_ids" : corp_ids, "corp_id_occurences" : corp_id_occurences}
+        return corp_id_struc
 
     async def extract_alliance_ids(self, char_data_list):
         alliance_ids = []
+        alliance_id_occurences = {}
         for entry in char_data_list:
             if entry.get('alliance_id') is not None:
                 if entry['alliance_id'] not in alliance_ids:
                     alliance_ids.append(entry['alliance_id'])
-            
-        return alliance_ids
+                    alliance_id_occurences[entry['alliance_id']] = 1
+                else:
+                    alliance_id_occurences[entry['alliance_id']] += 1
 
-    async def gather_alliance_data(self, alliance_ids):
+        alliance_id_struc = {"alliance_ids" : alliance_ids, "alliance_id_occurences" : alliance_id_occurences}
+        return alliance_id_struc
+
+    async def gather_alliance_data(self, alliance_id_struc):
         alliance_data_dict = {}
-        for entry in alliance_ids:
+        for entry in alliance_id_struc['alliance_ids']:
             data = await self.fetch_alliance(entry)
+            data['alliance_id'] = entry
+            data['character_count'] = alliance_id_struc['alliance_id_occurences'][entry]
             alliance_data_dict[entry] = data
 
         return alliance_data_dict
 
-    async def gather_corporation_data(self, corp_ids):
+    async def gather_corporation_data(self, corp_id_struc):
         corp_data_dict = {}
-        for entry in corp_ids:
+        for entry in corp_id_struc['corp_ids']:
             data = await self.fetch_corporation(entry)
+            data['corp_id'] = entry
+            data['character_count'] = corp_id_struc['corp_id_occurences'][entry]
             corp_data_dict[entry] = data
         
         return corp_data_dict
