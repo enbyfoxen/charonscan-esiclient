@@ -45,6 +45,7 @@ class ESIClient:
         data = await self.fetch_id(name)
         if 'character' in data:
             char = await self.fetch_char_data(data['character'][0])
+            char['character_id'] = data['character'][0]
             return char
 
         else:
@@ -99,10 +100,14 @@ class ESIClient:
 
     async def extract_corp_ids(self, char_data_list):
         corp_ids = []
+        corp_id_occurences = {}
         for entry in char_data_list:
             if entry.get('corporation_id') is not None:
                 if entry['corporation_id'] not in corp_ids:
                     corp_ids.append(entry['corporation_id'])
+                    corp_id_occurences[entry['corporation_id']] = 0
+                else:
+                    corp_id_occurences[entry['corporation_id']] += 1
 
         return corp_ids
 
@@ -148,7 +153,7 @@ async def test():
 
 if __name__ == "__main__":
     data = asyncio.run(test())
-    print(data['alliance_data_list'])
+    print(data)
     #start = time.time()
     #data = asyncio.run(full_fetch(chartext))
     #end = time.time()
