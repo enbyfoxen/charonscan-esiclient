@@ -58,7 +58,8 @@ class ESIClient:
     # Make request to /search/ endpoint using character name to get character ID, cached by character name
     @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_search)
     async def fetch_id(self, name):
-        url = 'https://esi.evetech.net/latest/search/'
+        url = 'https://esi.evetech.net/latest/'
+        target = 'search/'
         params = [
             ('categories', 'character'), 
             ('datasource', 'tranquility'), 
@@ -66,9 +67,20 @@ class ESIClient:
             ('search', name),
             ('strict', 'true')]
 
-        async with self.session.get(url, params=params) as response:
-            data = await response.json()
-            return data
+        data = await self.make_request(url, target, params)
+        return data
+
+    async def make_request(self, url, target, params):
+        ok_flag = False
+        fail_counter = 0
+        while ok_flag != True:
+            async with self.session.get(url + str(target), params=params) as response:
+                if response.status == 200:
+                    ok_flag = True
+                    return await response.json()
+                else:
+                    print("FAIL Nr " + str(fail_counter) + ", code: " + str(response.status))
+                    fail_counter += 1
 
     # Make request to /characters/ endpoint using character ID, cached by character ID
     @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_id)
@@ -77,8 +89,8 @@ class ESIClient:
             ('datasource', 'tranquility'), 
         ]
         url = 'https://esi.evetech.net/latest/characters/'
-        async with self.session.get(url + str(charID), params=params) as response:
-            return await response.json()
+        response = await self.make_request(url, charID, params)
+        return response
     
     @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_alliance)
     async def fetch_alliance(self, allianceID):
@@ -86,8 +98,8 @@ class ESIClient:
             ('datasource', 'tranquility')
         ]
         url = 'https://esi.evetech.net/latest/alliances/'
-        async with self.session.get(url + str(allianceID), params = params) as response:
-            return await response.json()
+        response = await self.make_request(url, allianceID, params)
+        return response
 
     @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_corporation)
     async def fetch_corporation(self,corporationID):
@@ -95,8 +107,8 @@ class ESIClient:
             ('datasource', 'tranquility')
         ]
         url = 'https://esi.evetech.net/latest/corporations/'
-        async with self.session.get(url + str(corporationID), params=params) as response:
-            return await response.json()
+        response = await self.make_request(url, corporationID, params)
+        return response
 
     async def extract_corp_ids(self, char_data_list):
         corp_ids = []
@@ -147,7 +159,7 @@ class ESIClient:
         return corp_data_dict
 
 async def test():
-    with open('charssmall.json') as f:
+    with open('chars.json') as f:
         chartext = json.load(f)
         f.close()
 
@@ -163,7 +175,7 @@ async def test():
 
 if __name__ == "__main__":
     data = asyncio.run(test())
-    print(data)
+    #print(data)
     #start = time.time()
     #data = asyncio.run(full_fetch(chartext))
     #end = time.time()
