@@ -74,6 +74,7 @@ class ESIClient:
         ok_flag = False
         fail_counter = 0
         while ok_flag != True:
+            print("doing esi call for " + str(target))
             async with self.session.get(url + str(target), params=params) as response:
                 if response.status == 200:
                     ok_flag = True
@@ -141,20 +142,24 @@ class ESIClient:
     async def gather_alliance_data(self, alliance_id_struc):
         alliance_data_dict = {}
         for entry in alliance_id_struc['alliance_ids']:
+            print("start for alliance: " + str(entry)) #debug
             data = await self.fetch_alliance(entry)
             data['alliance_id'] = entry
             data['character_count'] = alliance_id_struc['alliance_id_occurences'][entry]
             alliance_data_dict[entry] = data
+            print("end for alliance: " + str(entry)) #debug
 
         return alliance_data_dict
 
     async def gather_corporation_data(self, corp_id_struc):
         corp_data_dict = {}
         for entry in corp_id_struc['corp_ids']:
+            print("start for corp: " + str(entry)) #debug
             data = await self.fetch_corporation(entry)
             data['corp_id'] = entry
             data['character_count'] = corp_id_struc['corp_id_occurences'][entry]
             corp_data_dict[entry] = data
+            print("end for corp: " + str(entry)) #debug
         
         return corp_data_dict
 

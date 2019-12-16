@@ -29,6 +29,7 @@ async def post(request):
         resp.headers['string-invalid'] = 'true'
         return resp
 
+    print("doing api request")
     data = await esiclient_session.fetch_all_names(parsed)
     resp = web.json_response(data)
     resp.headers['string-invalid'] = 'false'
