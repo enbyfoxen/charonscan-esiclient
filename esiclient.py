@@ -32,10 +32,10 @@ class ESIClient:
         char_data_list = await asyncio.gather(*[self.fetch_char_complete(name) for name in name_list])
         corp_id_struc = await self.extract_corp_ids(char_data_list)
         alliance_id_struc = await self.extract_alliance_ids(char_data_list)
-        corp_data_list = asyncio.create_task(self.gather_corporation_data(corp_id_struc))
-        alliance_data_list = asyncio.create_task(self.gather_alliance_data(alliance_id_struc))
-        await corp_data_list
-        await alliance_data_list
+        corp_data_list_task = asyncio.create_task(self.gather_corporation_data(corp_id_struc))
+        alliance_data_list_task = asyncio.create_task(self.gather_alliance_data(alliance_id_struc))
+        corp_data_list = await corp_data_list_task
+        alliance_data_list = await alliance_data_list_task
         data_combined = {
             'char_data_list' : char_data_list,
             'alliance_data_list' : alliance_data_list,
@@ -199,7 +199,7 @@ async def test():
 
 if __name__ == "__main__":
     data = asyncio.run(test())
-    #print(data)
+    print(data)
     #start = time.time()
     #data = asyncio.run(full_fetch(chartext))
     #end = time.time()
