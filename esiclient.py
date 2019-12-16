@@ -32,8 +32,10 @@ class ESIClient:
         char_data_list = await asyncio.gather(*[self.fetch_char_complete(name) for name in name_list])
         corp_id_struc = await self.extract_corp_ids(char_data_list)
         alliance_id_struc = await self.extract_alliance_ids(char_data_list)
-        corp_data_list = await self.gather_corporation_data(corp_id_struc)
-        alliance_data_list = await self.gather_alliance_data(alliance_id_struc)
+        corp_data_list = asyncio.create_task(self.gather_corporation_data(corp_id_struc))
+        alliance_data_list = asyncio.create_task(self.gather_alliance_data(alliance_id_struc))
+        await corp_data_list
+        await alliance_data_list
         data_combined = {
             'char_data_list' : char_data_list,
             'alliance_data_list' : alliance_data_list,
@@ -139,29 +141,46 @@ class ESIClient:
         alliance_id_struc = {"alliance_ids" : alliance_ids, "alliance_id_occurences" : alliance_id_occurences}
         return alliance_id_struc
 
-    async def gather_alliance_data(self, alliance_id_struc):
-        alliance_data_dict = {}
-        for entry in alliance_id_struc['alliance_ids']:
-            print("start for alliance: " + str(entry)) #debug
-            data = await self.fetch_alliance(entry)
-            data['alliance_id'] = entry
-            data['character_count'] = alliance_id_struc['alliance_id_occurences'][entry]
-            alliance_data_dict[entry] = data
-            print("end for alliance: " + str(entry)) #debug
-
-        return alliance_data_dict
-
-    async def gather_corporation_data(self, corp_id_struc):
-        corp_data_dict = {}
-        for entry in corp_id_struc['corp_ids']:
-            print("start for corp: " + str(entry)) #debug
-            data = await self.fetch_corporation(entry)
-            data['corp_id'] = entry
-            data['character_count'] = corp_id_struc['corp_id_occurences'][entry]
-            corp_data_dict[entry] = data
-            print("end for corp: " + str(entry)) #debug
+    # Call function that fetches the alliance data from ESI, then assemble the data to include alliance_id and amount, and return it.
+    async def assemble_alliance(self, alliance_id, character_count):
+        print("start for alliance: " + str(alliance_id))
+        data = await self.fetch_alliance(alliance_id)
+        data['alliance_id'] = alliance_id
+        data['character_count'] = character_count
+        print("end for alliance: " + str(alliance_id))
+        return data
         
-        return corp_data_dict
+    # create tasks to gather all alliance data and collect them, then transform to a dictionary indexed by alliance ID and return it.    
+    async def gather_alliance_data(self, alliance_id_struc):
+            print("start alliance data")
+            alliance_data_dict = {}
+            alliance_data_list = await asyncio.gather(*[self.assemble_alliance(entry, alliance_id_struc['alliance_id_occurences'][entry]) for entry in alliance_id_struc['alliance_ids']])
+            for entry in alliance_data_list:
+                alliance_data_dict[entry['alliance_id']] = entry
+                
+            print("end alliance data")
+            return alliance_data_dict
+
+    # Call function that fetches the corporation data from ESI, then assemble the data to include corp_id and amount, and return it.
+    async def assemble_corporation(self, corp_id, character_count):
+        print("start for corp: " + str(corp_id))
+        data = await self.fetch_corporation(corp_id)
+        data['corp_id'] = corp_id
+        data['character_count'] = character_count
+        print("end for corp: " + str(corp_id))
+        return data
+        
+    # create tasks to gather all corp data and collect them, then transform to a dictionary indexed by corp ID and return it.       
+    async def gather_corporation_data(self, corp_id_struc):
+            print("start corp data")
+            corp_data_dict = {}
+            corp_data_list = await asyncio.gather(*[self.assemble_corporation(entry, corp_id_struc['corp_id_occurences'][entry]) for entry in corp_id_struc['corp_ids']])
+            
+            for entry in corp_data_list:
+                corp_data_dict[entry['corp_id']] = entry
+
+            print("end corp data")
+            return corp_data_list
 
 async def test():
     with open('chars.json') as f:
