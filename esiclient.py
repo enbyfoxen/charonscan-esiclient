@@ -76,13 +76,13 @@ class ESIClient:
         ok_flag = False
         fail_counter = 0
         while ok_flag != True:
-            print("doing esi call for " + str(target))
+            #print("doing esi call for " + str(target)) #DEBUG
             async with self.session.get(url + str(target), params=params) as response:
                 if response.status == 200:
                     ok_flag = True
                     return await response.json()
                 else:
-                    print("FAIL Nr " + str(fail_counter) + ", code: " + str(response.status))
+                    #print("FAIL Nr " + str(fail_counter) + ", code: " + str(response.status)) #DEBUG
                     fail_counter += 1
 
     # Make request to /characters/ endpoint using character ID, cached by character ID
@@ -143,43 +143,43 @@ class ESIClient:
 
     # Call function that fetches the alliance data from ESI, then assemble the data to include alliance_id and amount, and return it.
     async def assemble_alliance(self, alliance_id, character_count):
-        print("start for alliance: " + str(alliance_id))
+        print("start for alliance: " + str(alliance_id)) #DEBUG
         data = await self.fetch_alliance(alliance_id)
         data['alliance_id'] = alliance_id
         data['character_count'] = character_count
-        print("end for alliance: " + str(alliance_id))
+        print("end for alliance: " + str(alliance_id)) #DEBUG
         return data
         
     # create tasks to gather all alliance data and collect them, then transform to a dictionary indexed by alliance ID and return it.    
     async def gather_alliance_data(self, alliance_id_struc):
-            print("start alliance data")
+            print("start alliance data") #DEBUG
             alliance_data_dict = {}
             alliance_data_list = await asyncio.gather(*[self.assemble_alliance(entry, alliance_id_struc['alliance_id_occurences'][entry]) for entry in alliance_id_struc['alliance_ids']])
             for entry in alliance_data_list:
                 alliance_data_dict[entry['alliance_id']] = entry
                 
-            print("end alliance data")
+            print("end alliance data") #DEBUG
             return alliance_data_dict
 
     # Call function that fetches the corporation data from ESI, then assemble the data to include corp_id and amount, and return it.
     async def assemble_corporation(self, corp_id, character_count):
-        print("start for corp: " + str(corp_id))
+        print("start for corp: " + str(corp_id)) #DEBUG
         data = await self.fetch_corporation(corp_id)
         data['corp_id'] = corp_id
         data['character_count'] = character_count
-        print("end for corp: " + str(corp_id))
+        print("end for corp: " + str(corp_id)) #DEBUG
         return data
         
     # create tasks to gather all corp data and collect them, then transform to a dictionary indexed by corp ID and return it.       
     async def gather_corporation_data(self, corp_id_struc):
-            print("start corp data")
+            print("start corp data") #DEBUG
             corp_data_dict = {}
             corp_data_list = await asyncio.gather(*[self.assemble_corporation(entry, corp_id_struc['corp_id_occurences'][entry]) for entry in corp_id_struc['corp_ids']])
             
             for entry in corp_data_list:
                 corp_data_dict[entry['corp_id']] = entry
 
-            print("end corp data")
+            print("end corp data") #DEBUG
             return corp_data_list
 
 async def test():
