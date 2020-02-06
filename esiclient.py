@@ -4,6 +4,7 @@ import time
 import json
 from aiocache import Cache
 from aiocache import cached
+from aiocache.serializers import PickleSerializer
 
 def keybuild_search(f, selfvar, name):
     return name
@@ -58,7 +59,7 @@ class ESIClient:
             return char 
 
     # Make request to /search/ endpoint using character name to get character ID, cached by character name
-    @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_search)
+    @cached(ttl=604800, cache=Cache.REDIS, key_builder=keybuild_search, serializer=PickleSerializer(), port=6379, namespace="main")
     async def fetch_id(self, name):
         url = 'https://esi.evetech.net/latest/'
         target = 'search/'
@@ -86,7 +87,7 @@ class ESIClient:
                     fail_counter += 1
 
     # Make request to /characters/ endpoint using character ID, cached by character ID
-    @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_id)
+    @cached(ttl=86400, cache=Cache.REDIS, key_builder=keybuild_id, serializer=PickleSerializer(), port=6379, namespace="main")
     async def fetch_char_data(self, charID):
         params = [
             ('datasource', 'tranquility'), 
@@ -95,7 +96,7 @@ class ESIClient:
         response = await self.make_request(url, charID, params)
         return response
     
-    @cached(ttl=604800, cache=Cache.MEMORY, key_builder=keybuild_alliance)
+    @cached(ttl=604800, cache=Cache.REDIS, key_builder=keybuild_alliance, serializer=PickleSerializer(), port=6379, namespace="main")
     async def fetch_alliance(self, allianceID):
         params = [
             ('datasource', 'tranquility')
@@ -104,7 +105,7 @@ class ESIClient:
         response = await self.make_request(url, allianceID, params)
         return response
 
-    @cached(ttl=86400, cache=Cache.MEMORY, key_builder=keybuild_corporation)
+    @cached(ttl=86400, cache=Cache.REDIS, key_builder=keybuild_corporation, serializer=PickleSerializer(), port=6379, namespace="main")
     async def fetch_corporation(self,corporationID):
         params = [
             ('datasource', 'tranquility')
